@@ -1,0 +1,63 @@
+# CDK-spezifische Dateien
+cdk.out/
+cdk.context.json
+.cdk.staging/
+
+# Node.js-spezifische Dateien
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+.npm/
+
+# TypeScript-spezifische Dateien
+*.js
+*.d.ts
+!jest.config.js
+!cdk/lambda/*.js
+*.tsbuildinfo
+
+# Temporäre Dateien
+temp_gallery/
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Bildverzeichnisse - Verzeichnisse selbst behalten, aber Inhalte ignorieren
+resources/*
+!resources/.gitkeep
+erased/*
+!erased/.gitkeep
+output/*
+!output/.gitkeep
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE-spezifische Dateien
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Betriebssystem-spezifische Dateien
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db 

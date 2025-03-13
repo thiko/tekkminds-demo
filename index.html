@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thieme Image Gallery</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f5f5f7;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    
+    /* Header styles */
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      color: #1d1d1f;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      font-size: 1.1rem;
+      color: #666;
+    }
+    
+    /* Gallery grid */
+    .gallery-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    
+    /* Image card styles */
+    .image-card {
+      background-color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .image-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+    
+    .card-image-container {
+      position: relative;
+      padding-top: 75%; /* 4:3 aspect ratio */
+      overflow: hidden;
+    }
+    
+    .card-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    
+    .image-card:hover .card-image {
+      transform: scale(1.05);
+    }
+    
+    .card-info {
+      padding: 15px;
+    }
+    
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .card-date {
+      font-size: 0.8rem;
+      color: #888;
+    }
+    
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal-container {
+      position: relative;
+      width: 90%;
+      max-width: 1200px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 8px 8px 0 0;
+    }
+    
+    .modal-title {
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 5px;
+    }
+    
+    .modal-content {
+      position: relative;
+      background-color: #000;
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 80vh;
+    }
+    
+    .modal-image {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    .modal-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      padding: 15px;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .version-btn {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      margin: 0 5px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background-color 0.2s ease;
+    }
+    
+    .version-btn.active {
+      background-color: #0071e3;
+    }
+    
+    .version-btn:hover:not(.active) {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .modal-arrows {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      pointer-events: none;
+    }
+    
+    .arrow-btn {
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: background-color 0.2s ease;
+    }
+    
+    .arrow-btn:hover {
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+      }
+      
+      .modal-container {
+        width: 95%;
+      }
+      
+      .modal-title {
+        font-size: 1rem;
+      }
+      
+      .version-btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+      }
+      
+      .arrow-btn {
+        width: 40px;
+        height: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Thieme Image Gallery</h1>
+    <p class="subtitle">Medical Image Processing Showcase</p>
+  </header>
+  
+  <div class="gallery-container">
+    <div class="gallery-grid" id="gallery">
+      <!-- Image cards will be inserted here by JavaScript -->
+    </div>
+  </div>
+  
+  <div class="modal-overlay" id="modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-title">Image Title</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-content">
+        <img src="" alt="Enlarged image" class="modal-image" id="modal-image">
+        <div class="modal-nav">
+          <button class="version-btn active" data-version="original">Original</button>
+          <button class="version-btn" data-version="erased">Erased</button>
+          <button class="version-btn" data-version="final">Final</button>
+        </div>
+        <div class="modal-arrows">
+          <button class="arrow-btn" id="prev-btn">&larr;</button>
+          <button class="arrow-btn" id="next-btn">&rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Image data
+    const imageData = [
+  {
+    "filename": "cs_21374270.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374270.jpg",
+      "erased": "erased/cs_21374270.jpg",
+      "final": "output/cs_21374270.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374302.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374302.jpg",
+      "erased": "erased/cs_21374302.jpg",
+      "final": "output/cs_21374302.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374376.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374376.jpg",
+      "erased": "erased/cs_21374376.jpg",
+      "final": "output/cs_21374376.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374455.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374455.jpg",
+      "erased": "erased/cs_21374455.jpg",
+      "final": "output/cs_21374455.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374456.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374456.jpg",
+      "erased": "erased/cs_21374456.jpg",
+      "final": "output/cs_21374456.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374457.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374457.jpg",
+      "erased": "erased/cs_21374457.jpg",
+      "final": "output/cs_21374457.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374563.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374563.jpg",
+      "erased": "erased/cs_21374563.jpg",
+      "final": "output/cs_21374563.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374592.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374592.jpg",
+      "erased": "erased/cs_21374592.jpg",
+      "final": "output/cs_21374592.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374594.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374594.jpg",
+      "erased": "erased/cs_21374594.jpg",
+      "final": "output/cs_21374594.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374624.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374624.jpg",
+      "erased": "erased/cs_21374624.jpg",
+      "final": "output/cs_21374624.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374633.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374633.jpg",
+      "erased": "erased/cs_21374633.jpg",
+      "final": "output/cs_21374633.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374634.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374634.jpg",
+      "erased": "erased/cs_21374634.jpg",
+      "final": "output/cs_21374634.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374663.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374663.jpg",
+      "erased": "erased/cs_21374663.jpg",
+      "final": "output/cs_21374663.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374667.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374667.jpg",
+      "erased": "erased/cs_21374667.jpg",
+      "final": "output/cs_21374667.jpg"
+    }
+  },
+  {
+    "filename": "cs_21374732.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21374732.jpg",
+      "erased": "erased/cs_21374732.jpg",
+      "final": "output/cs_21374732.jpg"
+    }
+  },
+  {
+    "filename": "cs_21380143.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21380143.jpg",
+      "erased": "erased/cs_21380143.jpg",
+      "final": "output/cs_21380143.jpg"
+    }
+  },
+  {
+    "filename": "cs_21384072.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21384072.jpg",
+      "erased": "erased/cs_21384072.jpg",
+      "final": "output/cs_21384072.jpg"
+    }
+  },
+  {
+    "filename": "cs_21384104.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21384104.jpg",
+      "erased": "erased/cs_21384104.jpg",
+      "final": "output/cs_21384104.jpg"
+    }
+  },
+  {
+    "filename": "cs_21384702.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21384702.jpg",
+      "erased": "erased/cs_21384702.jpg",
+      "final": "output/cs_21384702.jpg"
+    }
+  },
+  {
+    "filename": "cs_21384872.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21384872.jpg",
+      "erased": "erased/cs_21384872.jpg",
+      "final": "output/cs_21384872.jpg"
+    }
+  },
+  {
+    "filename": "cs_21385031.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21385031.jpg",
+      "erased": "erased/cs_21385031.jpg",
+      "final": "output/cs_21385031.jpg"
+    }
+  },
+  {
+    "filename": "cs_21385068.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21385068.jpg",
+      "erased": "erased/cs_21385068.jpg",
+      "final": "output/cs_21385068.jpg"
+    }
+  },
+  {
+    "filename": "cs_21388670.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21388670.jpg",
+      "erased": "erased/cs_21388670.jpg",
+      "final": "output/cs_21388670.jpg"
+    }
+  },
+  {
+    "filename": "cs_21396464.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21396464.jpg",
+      "erased": "erased/cs_21396464.jpg",
+      "final": "output/cs_21396464.jpg"
+    }
+  },
+  {
+    "filename": "cs_21402559.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21402559.jpg",
+      "erased": "erased/cs_21402559.jpg",
+      "final": "output/cs_21402559.jpg"
+    }
+  },
+  {
+    "filename": "cs_21402636.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21402636.jpg",
+      "erased": "erased/cs_21402636.jpg",
+      "final": "output/cs_21402636.jpg"
+    }
+  },
+  {
+    "filename": "cs_21646198.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21646198.jpg",
+      "erased": "erased/cs_21646198.jpg",
+      "final": "output/cs_21646198.jpg"
+    }
+  },
+  {
+    "filename": "csm_Abb_10_gina_thrombus_5bdcbcf882.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/csm_Abb_10_gina_thrombus_5bdcbcf882.jpg",
+      "erased": "erased/csm_Abb_10_gina_thrombus_5bdcbcf882.jpg",
+      "final": "output/csm_Abb_10_gina_thrombus_5bdcbcf882.jpg"
+    }
+  },
+  {
+    "filename": "csm_Abb_11_vor_und_nach_therapie_b40375cc2a.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/csm_Abb_11_vor_und_nach_therapie_b40375cc2a.jpg",
+      "erased": "erased/csm_Abb_11_vor_und_nach_therapie_b40375cc2a.jpg",
+      "final": "output/csm_Abb_11_vor_und_nach_therapie_b40375cc2a.jpg"
+    }
+  },
+  {
+    "filename": "csm_Abb_12_roe_ll_RHF_4a8d7fc668.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/csm_Abb_12_roe_ll_RHF_4a8d7fc668.jpg",
+      "erased": "erased/csm_Abb_12_roe_ll_RHF_4a8d7fc668.jpg",
+      "final": "output/csm_Abb_12_roe_ll_RHF_4a8d7fc668.jpg"
+    }
+  },
+  {
+    "filename": "csm_Abb_6_Roe_VD_1f10ce2407.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/csm_Abb_6_Roe_VD_1f10ce2407.jpg",
+      "erased": "erased/csm_Abb_6_Roe_VD_1f10ce2407.jpg",
+      "final": "output/csm_Abb_6_Roe_VD_1f10ce2407.jpg"
+    }
+  },
+  {
+    "filename": "csm_Abb_7_ein_Wurm_095b6f8aa6.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/csm_Abb_7_ein_Wurm_095b6f8aa6.jpg",
+      "erased": "erased/csm_Abb_7_ein_Wurm_095b6f8aa6.jpg",
+      "final": "output/csm_Abb_7_ein_Wurm_095b6f8aa6.jpg"
+    }
+  },
+  {
+    "filename": "csm_Abb_8_viele_Wuermer_3c66d90265.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/csm_Abb_8_viele_Wuermer_3c66d90265.jpg",
+      "erased": "erased/csm_Abb_8_viele_Wuermer_3c66d90265.jpg",
+      "final": "output/csm_Abb_8_viele_Wuermer_3c66d90265.jpg"
+    }
+  },
+  {
+    "filename": "mrt hydrocephalus.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/mrt hydrocephalus.jpg",
+      "erased": "erased/mrt hydrocephalus.jpg",
+      "final": "output/mrt hydrocephalus.jpg"
+    }
+  },
+  {
+    "filename": "t1.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/t1.jpg",
+      "erased": "erased/t1.jpg",
+      "final": "output/t1.jpg"
+    }
+  },
+  {
+    "filename": "t2.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/t2.jpg",
+      "erased": "erased/t2.jpg",
+      "final": "output/t2.jpg"
+    }
+  },
+  {
+    "filename": "t3.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/t3.jpg",
+      "erased": "erased/t3.jpg",
+      "final": "output/t3.jpg"
+    }
+  },
+  {
+    "filename": "t4.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/t4.jpg",
+      "erased": "erased/t4.jpg",
+      "final": "output/t4.jpg"
+    }
+  },
+  {
+    "filename": "t5.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/t5.jpg",
+      "erased": "erased/t5.jpg",
+      "final": "output/t5.jpg"
+    }
+  },
+  {
+    "filename": "10.1055-a-1214-9117-10-1055-a-1214-9117-iim07.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/10.1055-a-1214-9117-10-1055-a-1214-9117-iim07.jpg",
+      "erased": "erased/10.1055-a-1214-9117-10-1055-a-1214-9117-iim07.jpg",
+      "final": "output/10.1055-a-1214-9117-10-1055-a-1214-9117-iim07.jpg"
+    }
+  },
+  {
+    "filename": "10.1055-a-1402-0543-lro-0870_10-1055-a-1402-0543-i4.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/10.1055-a-1402-0543-lro-0870_10-1055-a-1402-0543-i4.jpg",
+      "erased": "erased/10.1055-a-1402-0543-lro-0870_10-1055-a-1402-0543-i4.jpg",
+      "final": "output/10.1055-a-1402-0543-lro-0870_10-1055-a-1402-0543-i4.jpg"
+    }
+  },
+  {
+    "filename": "459326825_935485865263077_1475884252764040213_n.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/459326825_935485865263077_1475884252764040213_n.jpg",
+      "erased": "erased/459326825_935485865263077_1475884252764040213_n.jpg",
+      "final": "output/459326825_935485865263077_1475884252764040213_n.jpg"
+    }
+  },
+  {
+    "filename": "cs_21350876.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21350876.jpg",
+      "erased": "erased/cs_21350876.jpg",
+      "final": "output/cs_21350876.jpg"
+    }
+  },
+  {
+    "filename": "cs_21350945.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21350945.jpg",
+      "erased": "erased/cs_21350945.jpg",
+      "final": "output/cs_21350945.jpg"
+    }
+  },
+  {
+    "filename": "cs_21351073.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21351073.jpg",
+      "erased": "erased/cs_21351073.jpg",
+      "final": "output/cs_21351073.jpg"
+    }
+  },
+  {
+    "filename": "cs_21351074.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21351074.jpg",
+      "erased": "erased/cs_21351074.jpg",
+      "final": "output/cs_21351074.jpg"
+    }
+  },
+  {
+    "filename": "cs_21352269.jpg",
+    "date": "2025-03-13",
+    "paths": {
+      "original": "resources/cs_21352269.jpg",
+      "erased": "erased/cs_21352269.jpg",
+      "final": "output/cs_21352269.jpg"
+    }
+  }
+];
+    
+    // DOM elements
+    const gallery = document.getElementById('gallery');
+    const modal = document.getElementById('modal');
+    const modalImage = document.getElementById('modal-image');
+    const modalTitle = document.getElementById('modal-title');
+    const modalClose = document.getElementById('modal-close');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    
+    // State
+    let currentImageIndex = 0;
+    let currentVersion = 'original';
+    
+    // Create gallery cards
+    function createGallery() {
+      imageData.forEach((image, index) => {
+        const card = document.createElement('div');
+        card.className = 'image-card';
+        card.innerHTML = `
+          <div class="card-image-container">
+            <img src="${image.paths.original}" alt="${image.filename}" class="card-image">
+          </div>
+          <div class="card-info">
+            <h3 class="card-title">${image.filename}</h3>
+            <p class="card-date">${image.date}</p>
+          </div>
+        `;
+        
+        card.addEventListener('click', () => openModal(index));
+        gallery.appendChild(card);
+      });
+    }
+    
+    // Open modal with image
+    function openModal(index) {
+      currentImageIndex = index;
+      currentVersion = 'original';
+      updateModalImage();
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+    
+    // Close modal
+    function closeModal() {
+      modal.classList.remove('active');
+      document.body.style.overflow = ''; // Restore scrolling
+    }
+    
+    // Update modal image based on current index and version
+    function updateModalImage() {
+      const image = imageData[currentImageIndex];
+      modalTitle.textContent = image.filename;
+      
+      // Update version buttons
+      document.querySelectorAll('.version-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.version === currentVersion);
+      });
+      
+      // Set image source based on version
+      let imagePath;
+      switch(currentVersion) {
+        case 'original':
+          imagePath = image.paths.original;
+          break;
+        case 'erased':
+          imagePath = image.paths.erased;
+          break;
+        case 'final':
+          imagePath = image.paths.final;
+          break;
+      }
+      
+      modalImage.src = imagePath;
+    }
+    
+    // Navigate to previous image
+    function prevImage() {
+      currentImageIndex = (currentImageIndex - 1 + imageData.length) % imageData.length;
+      updateModalImage();
+    }
+    
+    // Navigate to next image
+    function nextImage() {
+      currentImageIndex = (currentImageIndex + 1) % imageData.length;
+      updateModalImage();
+    }
+    
+    // Event listeners
+    modalClose.addEventListener('click', closeModal);
+    prevBtn.addEventListener('click', prevImage);
+    nextBtn.addEventListener('click', nextImage);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+    
+    // Version button clicks
+    document.querySelectorAll('.version-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentVersion = btn.dataset.version;
+        updateModalImage();
+      });
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (!modal.classList.contains('active')) return;
+      
+      switch(e.key) {
+        case 'Escape':
+          closeModal();
+          break;
+        case 'ArrowLeft':
+          prevImage();
+          break;
+        case 'ArrowRight':
+          nextImage();
+          break;
+      }
+    });
+    
+    // Initialize gallery
+    createGallery();
+  </script>
+</body>
+</html>

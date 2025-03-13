@@ -1,86 +1,125 @@
 # Thieme Image Gallery
 
-Eine webbasierte Galerie zur Anzeige der Ergebnisse der internen Bildverarbeitungsanwendung.
+A web-based image processing gallery that displays medical images in three different processing stages: original, erased (text removed), and final (translated text).
 
-## Projektübersicht
+## Features
 
-Diese Anwendung ermöglicht es Stakeholdern innerhalb des Unternehmens, die neuesten Ergebnisse der Bildverarbeitungsanwendung anzusehen, ohne dass einzelne Vorschauen gesendet werden müssen. Die Galerie zeigt für jedes verarbeitete Bild drei Varianten an:
+- Self-contained single HTML file with embedded CSS and JavaScript
+- Responsive design that works on various devices
+- Thumbnail gallery view with image cards
+- Modal overlay for larger image viewing
+- Navigation between the three versions of each image
+- Keyboard navigation support (arrow keys, escape)
+- No external dependencies to avoid CORS issues
 
-- Original-Bild (aus dem Verzeichnis `resources/`)
-- Bild mit entferntem Text (aus dem Verzeichnis `erased/`)
-- Finales Ergebnis mit übersetztem Text (aus dem Verzeichnis `output/`)
+## Project Structure
 
-## Infrastruktur
-
-Die Anwendung verwendet folgende AWS-Dienste:
-
-- **S3-Bucket**: Speichert die Bilder und die HTML-Galerie
-- **CloudFront**: Stellt die Inhalte bereit und implementiert die Authentifizierung
-- **Lambda@Edge**: Implementiert die Basisauthentifizierung für den Zugriff auf die Galerie
-
-## Voraussetzungen
-
-- AWS CLI installiert und konfiguriert
-- Node.js und npm installiert
-- AWS CDK installiert (`npm install -g aws-cdk`)
-
-## Installation und Bereitstellung
-
-### 1. Infrastruktur bereitstellen
-
-Verwende das `provisioning.sh`-Skript, um die AWS-Infrastruktur bereitzustellen:
-
-```bash
-./provisioning.sh <aws-profile-name>
+```
+├── resources/    # Original images
+├── erased/       # Images with text removed
+├── output/       # Final images with translated text
+├── cdk/          # AWS CDK infrastructure code
+├── provisioning.sh  # AWS infrastructure setup script
+├── generate_gallery.js  # Gallery HTML generator
+├── deploy.sh     # Deployment script
+└── index.html    # Generated gallery file
 ```
 
-Dieses Skript:
-- Überprüft, ob das angegebene AWS-Profil existiert und Zugriff auf das Zielkonto hat
-- Installiert die CDK-Abhängigkeiten
-- Führt das CDK-Bootstrapping durch (falls erforderlich)
-- Stellt den CloudFormation-Stack bereit
-- Zeigt die Stack-Outputs an
+## Usage
 
-### 2. Bilder und HTML-Galerie bereitstellen
+### Prerequisites
 
-Verwende das `deploy.sh`-Skript, um die Bilder und die HTML-Galerie bereitzustellen:
+- Node.js (for running the gallery generator)
+- AWS CLI configured with appropriate credentials
+- Images placed in the appropriate directories (resources, erased, output)
 
-```bash
-./deploy.sh <aws-profile-name> [--max-images=100]
-```
+### Generating the Gallery
 
-Optionale Parameter:
-- `--generate-only`: Generiert nur die HTML-Galerie ohne Upload
-- `--upload-only`: Lädt nur die Bilder und HTML-Galerie hoch ohne Generierung
-- `--invalidate-only`: Invalidiert nur den CloudFront-Cache
-- `--max-images=N`: Begrenzt die Anzahl der hochzuladenden Bilder (Standard: 100)
-
-## Verzeichnisstruktur
-
-- `cdk/`: CDK-Projektverzeichnis
-  - `lib/`: CDK-Stack-Definition
-  - `lambda/`: Lambda@Edge-Funktionen
-- `resources/`: Verzeichnis für Original-Bilder
-- `erased/`: Verzeichnis für Bilder mit entferntem Text
-- `output/`: Verzeichnis für finale Bilder mit übersetztem Text
-- `provisioning.sh`: Skript zur Bereitstellung der Infrastruktur
-- `deploy.sh`: Skript zur Bereitstellung der Bilder und HTML-Galerie
-
-## Authentifizierung
-
-Die Galerie ist durch eine Basisauthentifizierung geschützt. Die Standardanmeldedaten sind:
-
-- Benutzername: `thieme`
-- Passwort: `gallery`
-
-Diese Anmeldedaten können in der Lambda@Edge-Funktion (`cdk/lambda/auth.ts`) geändert werden.
-
-## Lokale Vorschau
-
-Um die Galerie lokal anzusehen, ohne sie auf AWS hochzuladen:
+To generate the gallery HTML file locally:
 
 ```bash
-./deploy.sh <aws-profile-name> --generate-only
+# Make the script executable
+chmod +x generate_gallery.js
+
+# Generate with default settings (100 images)
+./generate_gallery.js
+
+# Or specify the number of images to include
+./generate_gallery.js 50
 ```
 
-Öffne dann die Datei `temp_gallery/index.html` in deinem Browser. 
+This will create an `index.html` file that you can open locally in your browser.
+
+### Deployment
+
+The `deploy.sh` script handles generating the gallery, uploading to S3, and invalidating the CloudFront cache:
+
+```bash
+# Make the script executable
+chmod +x deploy.sh
+
+# Full deployment with default settings
+./deploy.sh --profile your-aws-profile
+
+# Specify number of images to include
+./deploy.sh --profile your-aws-profile --num-images 50
+
+# Only generate the HTML file locally
+./deploy.sh --profile your-aws-profile --generate-only
+
+# Only upload pre-generated files
+./deploy.sh --profile your-aws-profile --upload-only
+
+# Only invalidate CloudFront cache
+./deploy.sh --profile your-aws-profile --invalidate-only
+
+# Manually specify S3 bucket and CloudFront distribution (if CloudFormation lookup fails)
+./deploy.sh --profile your-aws-profile --bucket your-bucket-name --distribution your-distribution-id
+```
+
+### Options
+
+The `deploy.sh` script supports the following options:
+
+- `-n, --num-images NUM`: Number of images to include (default: 100)
+- `-g, --generate-only`: Only generate the HTML file locally, don't upload
+- `-u, --upload-only`: Only upload pre-generated HTML and images, don't generate
+- `-i, --invalidate-only`: Only invalidate CloudFront cache
+- `-p, --profile PROFILE`: AWS profile to use (required)
+- `-b, --bucket BUCKET`: Manually specify S3 bucket name (bypasses CloudFormation lookup)
+- `-d, --distribution DIST`: Manually specify CloudFront distribution ID (bypasses CloudFormation lookup)
+- `-h, --help`: Display help message
+
+## Implementation Details
+
+### Gallery Generator
+
+The `generate_gallery.js` script:
+- Scans the resources directory for images
+- Checks if all three versions of each image exist
+- Sorts images by modification date (newest first)
+- Generates a self-contained HTML file with embedded CSS and JavaScript
+- Limits the number of images based on the provided parameter
+
+### HTML Gallery
+
+The generated HTML file:
+- Contains all CSS and JavaScript embedded directly in the file
+- Displays images as thumbnail cards in a responsive grid
+- Shows a modal overlay when an image is clicked
+- Provides buttons to switch between original, erased, and final versions
+- Supports keyboard navigation (arrow keys, escape)
+- Works both locally and when deployed to S3/CloudFront
+
+### Deployment Script
+
+The `deploy.sh` script:
+- Retrieves S3 bucket name and CloudFront distribution ID from CloudFormation
+- Generates the gallery HTML file
+- Uploads the HTML file and images to S3
+- Invalidates the CloudFront cache
+- Provides options for running steps independently
+
+## Security
+
+Authentication is handled by an existing Lambda@Edge function configured in the AWS infrastructure. 
