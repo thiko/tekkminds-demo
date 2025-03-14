@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thieme Image Gallery</title>
+    <style>
+        :root {
+            --primary-color: #005eb8;
+            --secondary-color: #f8f9fa;
+            --text-color: #333;
+            --border-color: #ddd;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --overlay-bg: rgba(0, 0, 0, 0.85);
+            --success-color: #28a745;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: #f5f5f5;
+        }
+
+        header {
+            background-color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        button {
+            cursor: pointer;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        button.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        main {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .gallery-container {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .gallery-container.grid-view {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+
+        .gallery-container.list-view {
+            grid-template-columns: 1fr;
+        }
+
+        .gallery-item {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px var(--shadow-color);
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .gallery-container.list-view .gallery-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .gallery-container.list-view .thumbnail-container {
+            flex: 0 0 150px;
+        }
+
+        .thumbnail-container {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+        }
+
+        .thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item:hover .thumbnail {
+            transform: scale(1.05);
+        }
+
+        .item-info {
+            padding: 1rem;
+        }
+
+        .item-info h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-info p {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        /* Overlay styles */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--overlay-bg);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #overlay.visible {
+            opacity: 1;
+        }
+
+        #overlay.hidden {
+            display: none;
+        }
+
+        .overlay-content {
+            width: 90%;
+            max-width: 1200px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            position: relative;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #333;
+            z-index: 10;
+        }
+
+        .image-navigation {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .image-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            max-height: 70vh;
+            overflow: hidden;
+        }
+
+        #overlay-image {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.7);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 1rem;
+        }
+
+        .version-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .version-btn {
+            padding: 0.5rem 1rem;
+        }
+
+        .version-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .image-info {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            main {
+                padding: 1rem;
+            }
+            
+            .gallery-container.grid-view {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            .overlay-content {
+                width: 95%;
+                padding: 1rem;
+            }
+            
+            .version-controls {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .gallery-container.list-view .gallery-item {
+                flex-direction: column;
+            }
+            
+            .gallery-container.list-view .thumbnail-container {
+                flex: 0 0 auto;
+                width: 100%;
+            }
+            
+            .nav-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 1rem;
+                margin: 0 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Thieme Image Gallery</h1>
+        <div class="view-controls">
+            <button id="grid-view" class="active">Grid View</button>
+            <button id="list-view">List View</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="gallery-container grid-view">
+            <!-- Gallery items will be dynamically inserted here -->
+        </div>
+    </main>
+
+    <div id="overlay" class="hidden">
+        <div class="overlay-content">
+            <button class="close-btn">&times;</button>
+            <div class="image-navigation">
+                <button class="nav-btn prev-btn">&lt;</button>
+                <div class="image-container">
+                    <img id="overlay-image" src="" alt="Enlarged image">
+                </div>
+                <button class="nav-btn next-btn">&gt;</button>
+            </div>
+            <div class="version-controls">
+                <button class="version-btn" data-version="original">Original</button>
+                <button class="version-btn" data-version="erased">Erased</button>
+                <button class="version-btn" data-version="output">Final</button>
+            </div>
+            <div class="image-info">
+                <p id="image-name"></p>
+                <p id="image-date"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Embedded gallery data to avoid CORS issues
+        const galleryData = [{"filename":"cs_21374270.jpg","date":"2025-03-13T08:48:00.000Z","size":97058},{"filename":"cs_21374302.jpg","date":"2025-03-13T08:48:00.000Z","size":78753},{"filename":"cs_21374376.jpg","date":"2025-03-13T08:48:00.000Z","size":68136},{"filename":"cs_21374455.jpg","date":"2025-03-13T08:48:00.000Z","size":31478},{"filename":"cs_21374456.jpg","date":"2025-03-13T08:48:00.000Z","size":50173},{"filename":"cs_21374457.jpg","date":"2025-03-13T08:48:00.000Z","size":45983},{"filename":"cs_21374563.jpg","date":"2025-03-13T08:48:00.000Z","size":95961},{"filename":"cs_21374592.jpg","date":"2025-03-13T08:48:00.000Z","size":63663},{"filename":"cs_21374594.jpg","date":"2025-03-13T08:48:00.000Z","size":87376},{"filename":"cs_21374624.jpg","date":"2025-03-13T08:48:00.000Z","size":86619},{"filename":"cs_21374633.jpg","date":"2025-03-13T08:48:00.000Z","size":132865},{"filename":"cs_21374634.jpg","date":"2025-03-13T08:48:00.000Z","size":138763},{"filename":"cs_21374663.jpg","date":"2025-03-13T08:48:00.000Z","size":116281},{"filename":"cs_21374667.jpg","date":"2025-03-13T08:48:00.000Z","size":83684},{"filename":"cs_21374732.jpg","date":"2025-03-13T08:48:00.000Z","size":46353},{"filename":"cs_21380143.jpg","date":"2025-03-13T08:48:00.000Z","size":57985},{"filename":"cs_21384072.jpg","date":"2025-03-13T08:48:00.000Z","size":126382},{"filename":"cs_21384104.jpg","date":"2025-03-13T08:48:00.000Z","size":176364},{"filename":"cs_21384702.jpg","date":"2025-03-13T08:48:00.000Z","size":93214},{"filename":"cs_21384872.jpg","date":"2025-03-13T08:48:00.000Z","size":90941},{"filename":"cs_21385031.jpg","date":"2025-03-13T08:48:00.000Z","size":105365},{"filename":"cs_21385068.jpg","date":"2025-03-13T08:48:00.000Z","size":69086},{"filename":"cs_21388670.jpg","date":"2025-03-13T08:48:00.000Z","size":97640},{"filename":"cs_21396464.jpg","date":"2025-03-13T08:48:00.000Z","size":186528},{"filename":"cs_21402559.jpg","date":"2025-03-13T08:48:00.000Z","size":120418},{"filename":"cs_21402636.jpg","date":"2025-03-13T08:48:00.000Z","size":104459},{"filename":"cs_21646198.jpg","date":"2025-03-13T08:48:00.000Z","size":348080},{"filename":"csm_Abb_10_gina_thrombus_5bdcbcf882.jpg","date":"2025-03-13T08:48:00.000Z","size":38637},{"filename":"csm_Abb_11_vor_und_nach_therapie_b40375cc2a.jpg","date":"2025-03-13T08:48:00.000Z","size":89813},{"filename":"csm_Abb_12_roe_ll_RHF_4a8d7fc668.jpg","date":"2025-03-13T08:48:00.000Z","size":41726},{"filename":"csm_Abb_6_Roe_VD_1f10ce2407.jpg","date":"2025-03-13T08:48:00.000Z","size":74968},{"filename":"csm_Abb_7_ein_Wurm_095b6f8aa6.jpg","date":"2025-03-13T08:48:00.000Z","size":31103},{"filename":"csm_Abb_8_viele_Wuermer_3c66d90265.jpg","date":"2025-03-13T08:48:00.000Z","size":37590},{"filename":"mrt hydrocephalus.jpg","date":"2025-03-13T08:48:00.000Z","size":832621},{"filename":"t1.jpg","date":"2025-03-13T08:48:00.000Z","size":890103},{"filename":"t2.jpg","date":"2025-03-13T08:48:00.000Z","size":77548},{"filename":"t3.jpg","date":"2025-03-13T08:48:00.000Z","size":106642},{"filename":"t4.jpg","date":"2025-03-13T08:48:00.000Z","size":221695},{"filename":"t5.jpg","date":"2025-03-13T08:48:00.000Z","size":96018},{"filename":"10.1055-a-1214-9117-10-1055-a-1214-9117-iim07.jpg","date":"2025-03-13T08:47:00.000Z","size":97321},{"filename":"10.1055-a-1402-0543-lro-0870_10-1055-a-1402-0543-i4.jpg","date":"2025-03-13T08:47:00.000Z","size":108826},{"filename":"459326825_935485865263077_1475884252764040213_n.jpg","date":"2025-03-13T08:47:00.000Z","size":370162},{"filename":"cs_21350876.jpg","date":"2025-03-13T08:47:00.000Z","size":96284},{"filename":"cs_21350945.jpg","date":"2025-03-13T08:47:00.000Z","size":91805},{"filename":"cs_21351073.jpg","date":"2025-03-13T08:47:00.000Z","size":486483},{"filename":"cs_21351074.jpg","date":"2025-03-13T08:47:00.000Z","size":167247},{"filename":"cs_21352269.jpg","date":"2025-03-13T08:47:00.000Z","size":205206}];  // Will be replaced by the generator
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Gallery state
+            const state = {
+                images: galleryData,
+                currentIndex: 0,
+                currentVersion: 'original',
+                viewMode: 'grid',
+            };
+
+            // DOM elements
+            const galleryContainer = document.querySelector('.gallery-container');
+            const overlay = document.getElementById('overlay');
+            const overlayImage = document.getElementById('overlay-image');
+            const imageName = document.getElementById('image-name');
+            const imageDate = document.getElementById('image-date');
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+            const closeBtn = document.querySelector('.close-btn');
+            const versionBtns = document.querySelectorAll('.version-btn');
+            const gridViewBtn = document.getElementById('grid-view');
+            const listViewBtn = document.getElementById('list-view');
+
+            // Render gallery items
+            function renderGallery() {
+                galleryContainer.innerHTML = '';
+                
+                state.images.forEach((image, index) => {
+                    const galleryItem = document.createElement('div');
+                    galleryItem.className = 'gallery-item';
+                    galleryItem.dataset.index = index;
+                    
+                    const thumbnailPath = getImagePath(image.filename, 'original');
+                    
+                    galleryItem.innerHTML = `
+                        <div class="thumbnail-container">
+                            <img class="thumbnail" src="${thumbnailPath}" alt="${image.filename}">
+                        </div>
+                        <div class="item-info">
+                            <h3>${image.filename}</h3>
+                            <p>Date: ${formatDate(image.date)}</p>
+                        </div>
+                    `;
+                    
+                    galleryItem.addEventListener('click', () => openOverlay(index));
+                    galleryContainer.appendChild(galleryItem);
+                });
+            }
+
+            // Get image path based on version
+            function getImagePath(filename, version) {
+                const versionMap = {
+                    'original': 'resources',
+                    'erased': 'erased',
+                    'output': 'output'
+                };
+                
+                const directory = versionMap[version] || 'resources';
+                return `${directory}/${filename}`;
+            }
+
+            // Format date for display
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString();
+            }
+
+            // Open overlay with image
+            function openOverlay(index) {
+                state.currentIndex = index;
+                updateOverlayImage();
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.add('visible'), 10);
+                document.body.style.overflow = 'hidden';
+            }
+
+            // Close overlay
+            function closeOverlay() {
+                overlay.classList.remove('visible');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 300);
+            }
+
+            // Update overlay image based on current index and version
+            function updateOverlayImage() {
+                const image = state.images[state.currentIndex];
+                if (!image) return;
+                
+                const imagePath = getImagePath(image.filename, state.currentVersion);
+                overlayImage.src = imagePath;
+                imageName.textContent = image.filename;
+                imageDate.textContent = `Date: ${formatDate(image.date)}`;
+                
+                // Update version buttons
+                versionBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.version === state.currentVersion);
+                });
+            }
+
+            // Navigate to previous image
+            function navigatePrev() {
+                state.currentIndex = (state.currentIndex - 1 + state.images.length) % state.images.length;
+                updateOverlayImage();
+            }
+
+            // Navigate to next image
+            function navigateNext() {
+                state.currentIndex = (state.currentIndex + 1) % state.images.length;
+                updateOverlayImage();
+            }
+
+            // Change image version
+            function changeVersion(version) {
+                state.currentVersion = version;
+                updateOverlayImage();
+            }
+
+            // Toggle view mode (grid/list)
+            function toggleViewMode(mode) {
+                state.viewMode = mode;
+                galleryContainer.className = `gallery-container ${mode}-view`;
+                
+                // Update buttons
+                gridViewBtn.classList.toggle('active', mode === 'grid');
+                listViewBtn.classList.toggle('active', mode === 'list');
+            }
+
+            // Event listeners
+            prevBtn.addEventListener('click', navigatePrev);
+            nextBtn.addEventListener('click', navigateNext);
+            closeBtn.addEventListener('click', closeOverlay);
+            
+            versionBtns.forEach(btn => {
+                btn.addEventListener('click', () => changeVersion(btn.dataset.version));
+            });
+            
+            gridViewBtn.addEventListener('click', () => toggleViewMode('grid'));
+            listViewBtn.addEventListener('click', () => toggleViewMode('list'));
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (overlay.classList.contains('hidden')) return;
+                
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        navigatePrev();
+                        break;
+                    case 'ArrowRight':
+                        navigateNext();
+                        break;
+                    case 'Escape':
+                        closeOverlay();
+                        break;
+                }
+            });
+
+            // Initialize gallery
+            renderGallery();
+        });
+    </script>
+</body>
+</html> 
