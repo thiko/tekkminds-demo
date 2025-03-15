@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Skript zur Bereitstellung der AWS-Infrastruktur für die Thieme Image Gallery
+# Skript zur Bereitstellung der AWS-Infrastruktur für die TekkMinds Image Gallery
 # Verwendung: ./provisioning.sh <aws-profile-name>
 
 set -e
@@ -60,6 +60,6 @@ echo "Bereitstellung abgeschlossen!"
 
 # Zeige die Stack-Outputs an
 echo "Stack-Outputs:"
-aws cloudformation describe-stacks --stack-name ThiemeImageGalleryStack --profile $AWS_PROFILE --query "Stacks[0].Outputs" --output table
+aws cloudformation describe-stacks --stack-name TekkMindsImageGalleryStack --profile $AWS_PROFILE --query "Stacks[0].Outputs" --output table
 
 echo "Infrastruktur erfolgreich bereitgestellt!" 

@@ -1,4 +1,4 @@
-# Thieme Image Gallery
+# TekkMinds Image Gallery
 
 A web-based image processing gallery application that displays images in three variations: original, erased, and final output.
 
