@@ -12,7 +12,6 @@ package-lock.json
 .npm/
 
 # TypeScript-spezifische Dateien
-*.js
 *.d.ts
 !jest.config.js
 !cdk/lambda/*.js
