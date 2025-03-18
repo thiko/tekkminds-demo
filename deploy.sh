@@ -84,7 +84,7 @@ fi
 if [ "$UPLOAD" = true ] || [ "$INVALIDATE" = true ]; then
   echo "Retrieving deployment information from CloudFormation stack..."
   
-  STACK_INFO=$(aws cloudformation describe-stacks --stack-name TekkMindsImageGalleryStack --profile "$AWS_PROFILE" --query "Stacks[0].Outputs" --output json)
+  STACK_INFO=$(aws cloudformation describe-stacks --stack-name ThiemeImageGalleryStack --profile "$AWS_PROFILE" --query "Stacks[0].Outputs" --output json)
   
   S3_BUCKET=$(echo "$STACK_INFO" | jq -r '.[] | select(.OutputKey=="BucketName") | .OutputValue')
   DISTRIBUTION_ID=$(echo "$STACK_INFO" | jq -r '.[] | select(.OutputKey=="DistributionId") | .OutputValue')
